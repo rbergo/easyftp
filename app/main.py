@@ -19,24 +19,44 @@ def read_conf(config_file=os.path.join(this_dir, '../conf/ftp.conf')):
 
 class CustomHandler(FTPHandler):
 
+    def logga(self, message):
+        return
+        out_file = open("/home/admin/easyftp/log/rob.log","a")
+        out_file.write(message + "\n")
+        out_file.close()
+
     def on_file_received(self, file):
+        self.logga("on_file_received" + file)
         import os
         head, tail = list(path.split(file))[0], list(path.split(file))[1]
-        os.rename(path.join(head, tail), path.join(head, tail[4:]))
+        os.rename(path.join(head, tail), path.join(head, tail[4:-1]))
         pass
-        
+    
+    #Rob: it seems doesn't exist !     
     def on_incomplete_received(self, file):
+        self.logga("on_incomplete_received" + file)
         import os
         os.remove(file)
 
-
     def ftp_STOR(self, file, mode='w'):
+        self.logga("ftp_STOR" + file)
         head, tail = list(path.split(file))[0], list(path.split(file))[1]
-        file = path.join(head, ".in." + tail)
-        
+        file = path.join(head, ".in." + tail + ".")
         return FTPHandler.ftp_STOR(self, file, mode)
 
+    def on_incomplete_file_received(self, file):
+        self.logga("on_incomplete_file_received" + file)
+        # remove partially uploaded files.
+        #This happens on connection interrupted but not when Ctrl+C is pressed on FTP client (rob)
+        import os
+        os.remove(file)
 
+    #Rob: added by me
+    def on_incomplete_file_sent(self, file):
+        self.logga("on_incomplete_file_sent" + file)
+        # remove partially uploaded files
+        import os
+        os.remove(file)
 
 def get_server(conf=None):
 
