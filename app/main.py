@@ -4,6 +4,8 @@ users', setting a limit for incoming connections.
 
 import os
 import yaml
+import logging
+import pyftpdlib.log
 
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import FTPHandler
@@ -73,7 +75,9 @@ def get_server(conf=None):
     # Instantiate FTP handler class
     handler = CustomHandler
     handler.authorizer = authorizer
-
+    #handler.log_prefix = '%(created)f [%(username)s]@%(remote_ip)s'
+    handler.log_prefix = '[%(username)s]@%(remote_ip)s'
+    
     # Define a customized banner (string returned when client connects)
     handler.banner = "simpleftp ready!"
 
@@ -98,5 +102,11 @@ def get_server(conf=None):
     return server
 
 if __name__ == '__main__':
+    logging.basicConfig(filename='/var/log/pyftpd.log', level=logging.DEBUG)
+    pyftpdlib.log.LEVEL = logging.DEBUG
+
+    #handler = FTPHandler
+    #handler.log_prefix = '[%(username)s]@%(remote_ip)s'
+
     server = get_server(read_conf())
     server.serve_forever()
