@@ -21,43 +21,40 @@ def read_conf(config_file=os.path.join(this_dir, '../conf/ftp.conf')):
 
 class CustomHandler(FTPHandler):
 
-    def logga(self, message):
-        return
-        out_file = open("/home/admin/easyftp/log/rob.log","a")
-        out_file.write(message + "\n")
-        out_file.close()
+    my_log = logging.getLogger('CustomHandler')
 
     def on_file_received(self, file):
-        self.logga("on_file_received" + file)
         import os
+        self.my_log.debug("Rename " + os.path.basename(file) + " to original file name")
         head, tail = list(path.split(file))[0], list(path.split(file))[1]
         os.rename(path.join(head, tail), path.join(head, tail[4:-1]))
         pass
     
     #Rob: it seems doesn't exist !     
     def on_incomplete_received(self, file):
-        self.logga("on_incomplete_received" + file)
         import os
+        self.my_log.warn("on_incomplete_received('" + os.path.basename(file) + "')")
         os.remove(file)
 
     def ftp_STOR(self, file, mode='w'):
-        self.logga("ftp_STOR" + file)
+        import os
+        self.my_log.debug("Rename " + os.path.basename(file) + " useing temp file name .in.xxx.")
         head, tail = list(path.split(file))[0], list(path.split(file))[1]
         file = path.join(head, ".in." + tail + ".")
         return FTPHandler.ftp_STOR(self, file, mode)
 
     def on_incomplete_file_received(self, file):
-        self.logga("on_incomplete_file_received" + file)
-        # remove partially uploaded files.
-        #This happens on connection interrupted but not when Ctrl+C is pressed on FTP client (rob)
         import os
+        self.my_log.warn("Remove partially uploaded file " + os.path.basename(file))
+        # remove partially uploaded file
+        #This happens on connection interrupted but not when Ctrl+C is pressed on FTP client (rob)
         os.remove(file)
 
     #Rob: added by me
     def on_incomplete_file_sent(self, file):
-        self.logga("on_incomplete_file_sent" + file)
-        # remove partially uploaded files
         import os
+        self.my_log.warn("Remove partially downloaded file " + os.path.basename(file))
+        # remove partially downloaded files
         os.remove(file)
 
 def get_server(conf=None):
@@ -75,8 +72,7 @@ def get_server(conf=None):
     # Instantiate FTP handler class
     handler = CustomHandler
     handler.authorizer = authorizer
-    #handler.log_prefix = '%(created)f [%(username)s]@%(remote_ip)s'
-    handler.log_prefix = '[%(username)s]@%(remote_ip)s'
+    handler.log_prefix = '[%(username)s@%(remote_ip)s:%(remote_port)s]'
     
     # Define a customized banner (string returned when client connects)
     handler.banner = "simpleftp ready!"
@@ -92,6 +88,7 @@ def get_server(conf=None):
 
     address = (server.get('address', ''), server.get('port', '2121'))
     server = FTPServer(address, handler)
+    pyftpdlib.log.LEVEL = log_level
 
     # set a limit for connections
     # server.max_cons = 256
@@ -102,11 +99,20 @@ def get_server(conf=None):
     return server
 
 if __name__ == '__main__':
-    logging.basicConfig(filename='/var/log/pyftpd.log', level=logging.DEBUG)
-    pyftpdlib.log.LEVEL = logging.DEBUG
+    conf = read_conf()
+    log_level = logging.DEBUG
+    if conf.get('log').get('level').upper() == 'INFO':
+        log_level = logging.INFO
+    elif conf.get('log').get('level').upper() == 'WARN':
+        log_level = logging.WARN
+    elif conf.get('log').get('level').upper() == 'ERROR':
+        log_level = logging.ERROR
+   
+    logging.basicConfig(level=log_level,
+                    format='%(asctime)s %(levelname)-5s %(name)-13s %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S',
+                    filename='/var/log/pyftpd.log',
+                    filemode='a')
 
-    #handler = FTPHandler
-    #handler.log_prefix = '[%(username)s]@%(remote_ip)s'
-
-    server = get_server(read_conf())
+    server = get_server(conf)
     server.serve_forever()
