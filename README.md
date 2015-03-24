@@ -38,4 +38,15 @@ Start the daemon:
 
      $ zdaemon -C conf/zdaemon.conf start
 
+To activate log rotation add this script in /etc/logrotate.conf:
+
+    /var/log/pyftpd.log {
+        daily
+        compress
+        rotate 10
+        postrotate
+            /usr/bin/pkill -xf "python app/main.py"
+        endscript
+    }
+
 Enjoy!
