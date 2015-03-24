@@ -113,6 +113,7 @@ if __name__ == '__main__':
                     datefmt='%Y-%m-%d %H:%M:%S',
                     filename='/var/log/pyftpd.log',
                     filemode='a')
+    pyftpdlib.log.LEVEL = log_level
 
     server = get_server(conf)
     server.serve_forever()
