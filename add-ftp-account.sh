@@ -18,7 +18,8 @@ if [ "$#" -ne 3 ]; then
 fi
 
 conf="conf/ftp.conf"
-perm="elrwm"
+#perm="elrwm"
+perm="wel"
 
 #--CREATE NEW USER ACCOUNT
 if [ -z "$( grep "name: $1" $conf )" ]; then
