@@ -38,6 +38,10 @@ Start the daemon:
 
      $ zdaemon -C conf/zdaemon.conf start
 
+Autostart on boot:
+
+    Edit /etc/rc.local and add a line to call the starter script: 'autostart-easyftp.sh'
+
 To activate log rotation add this script in /etc/logrotate.conf:
 
     /var/log/pyftpd.log {
